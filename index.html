@@ -10,8 +10,8 @@
     <div class="container">
         <h1>🃏 MTG Deck List Analyzer</h1>
         
-        <div class="input-section">
-            <label for="deckList">Enter your deck list (format: "1 Card Name" per line):</label>
+        <div class="input-section" id="inputSection">
+            <label for="deckList">Enter your Sealed Card Pool List (format: "1 Card Name" per line):</label>
             <textarea id="deckList" placeholder="1 Iron Giant
 1 Garnet, Princess of Alexandria
 1 Giott, King of the Dwarves
@@ -21,10 +21,35 @@
 1 Rinoa Heartilly
 1 Zidane, Tantalus Thief"></textarea>
             <br><br>
-            <button onclick="analyzeDeck()">Analyze Deck</button>
+            <div style="text-align: center;">
+                <div class="button-group">
+                    <button class="paste-button" onclick="pasteFromClipboard()" title="Paste from clipboard">
+                        📋
+                    </button>
+                    <button onclick="analyzeDeck()">Analyze Deck</button>
+                </div>
+            </div>
         </div>
         
-        <div id="results" class="results">
+        <!-- Main Navigation Menu -->
+        <div id="mainMenu" class="main-menu" style="display: none;">
+            <div class="menu-section">
+                <h2>📋 Analysis Options</h2>
+                <div class="menu-buttons">
+                    <button class="menu-button" onclick="showCardRankings()">📊 Card Rankings Overview</button>
+                    <button class="menu-button" onclick="showArchetypeAnalysis()">⭐ Archetype Analysis</button>
+                    <button class="menu-button" onclick="showLandsAndMisc()">🏔️ Lands and Miscellaneous</button>
+                    <button class="menu-button restart-button" onclick="restartAnalysis()">🔄 Restart Analysis</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Rankings View -->
+        <div id="cardRankingsView" class="analysis-view" style="display: none;">
+            <div class="view-header">
+                <h2>📊 Card Rankings Overview</h2>
+                <button class="main-menu-btn" onclick="showMainMenu()">🏠 Main Menu</button>
+            </div>
             <div class="cards-container">
                 <div class="cards-section">
                     <h2>📊 Card Rankings (C+ and Above)</h2>
@@ -36,88 +61,104 @@
                     <ul id="fillerCardList" class="card-list"></ul>
                 </div>
             </div>
-            
-            <div class="section insights">
-                <h2>💡 Color Combination Analysis</h2>
-                <div id="colorSuggestions"></div>
+        </div>
+        
+        <!-- Archetype Analysis View -->
+        <div id="archetypeAnalysisView" class="analysis-view" style="display: none;">
+            <div class="view-header">
+                <h2>⭐ Archetype Analysis</h2>
+                <button class="main-menu-btn" onclick="showMainMenu()">🏠 Main Menu</button>
             </div>
             
-            <div class="archetype-container">
-                <div class="archetype-section">
-                    <h2 id="archetype1Title">⭐ Best Archetype #1</h2>
-                    <div class="archetype-breakdown">
-                        <div class="card-tier">
-                            <h3>Premium Cards (C+ and Above)</h3>
-                            <div id="archetype1Premium" class="card-grid"></div>
-                        </div>
-                        <div class="card-tier">
-                            <h3>Playable Cards (C- to C)</h3>
-                            <div id="archetype1Playable" class="card-grid"></div>
-                        </div>
-                        <div class="card-tier">
-                            <h3>Filler Cards (D+ and Below)</h3>
-                            <div id="archetype1Filler" class="card-grid"></div>
-                        </div>
-                        <div class="splash-section">
-                            <h3>Splash Considerations (B- or Above)</h3>
-                            <p style="font-size: 11px; margin: 5px 0; color: #888; text-align: center;">
-                                +X = extra colors needed | ⚠️ = dangerous (2+ extra colors)
-                            </p>
-                            <div id="archetype1Splash" class="card-grid"></div>
-                        </div>
-                    </div>
+            <!-- Collapsible Analysis Legend -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" onclick="toggleCollapsible('analysisLegend')">
+                    <h3>🔍 Analysis Legend</h3>
+                    <span class="toggle-icon" id="analysisLegendIcon">▼</span>
                 </div>
-                
-                <div class="archetype-section">
-                    <h2 id="archetype2Title">⭐ Best Archetype #2</h2>
-                    <div class="archetype-breakdown">
-                        <div class="card-tier">
-                            <h3>Premium Cards (C+ and Above)</h3>
-                            <div id="archetype2Premium" class="card-grid"></div>
+                <div class="collapsible-content" id="analysisLegendContent">
+                    <div style="text-align: center; font-size: 12px; color: #cccccc;">
+                        <div style="margin-bottom: 10px;">
+                            <span style="margin: 0 10px;">⚡ = Card Synergy Available</span>
+                            <span style="margin: 0 10px;">⭐ = Build-Around Enabled</span>
+                            <span style="margin: 0 10px;">⚠️ = Needs More Support</span>
                         </div>
-                        <div class="card-tier">
-                            <h3>Playable Cards (C- to C)</h3>
-                            <div id="archetype2Playable" class="card-grid"></div>
+                        <div style="margin-bottom: 10px;">
+                            <span style="margin: 0 10px;">[++] = Best in Archetype</span>
+                            <span style="margin: 0 10px;">[+] = Good in Archetype</span>
+                            <span style="margin: 0 10px;">[-] = Poor in Archetype</span>
                         </div>
-                        <div class="card-tier">
-                            <h3>Filler Cards (D+ and Below)</h3>
-                            <div id="archetype2Filler" class="card-grid"></div>
-                        </div>
-                        <div class="splash-section">
-                            <h3>Splash Considerations (B- or Above)</h3>
-                            <p style="font-size: 11px; margin: 5px 0; color: #888; text-align: center;">
-                                +X = extra colors needed | ⚠️ = dangerous (2+ extra colors)
-                            </p>
-                            <div id="archetype2Splash" class="card-grid"></div>
+                        <div>
+                            <span style="margin: 0 10px; text-decoration: underline;">Underlined Cards</span> = Creatures or Creature Generators (Need 13+ per deck)
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="section">
-                <h2>🔍 Analysis Legend</h2>
-                <div style="text-align: center; font-size: 12px; color: #cccccc;">
-                    <div style="margin-bottom: 10px;">
-                        <span style="margin: 0 10px;">⚡ = Card Synergy Available</span>
-                        <span style="margin: 0 10px;">⭐ = Build-Around Enabled</span>
-                        <span style="margin: 0 10px;">⚠️ = Needs More Support</span>
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                        <span style="margin: 0 10px;">[++] = Best in Archetype</span>
-                        <span style="margin: 0 10px;">[+] = Good in Archetype</span>
-                        <span style="margin: 0 10px;">[-] = Poor in Archetype</span>
-                    </div>
-                    <div>
-                        <span style="margin: 0 10px; text-decoration: underline;">Underlined Cards</span> = Creatures or Creature Generators (Need 13+ per deck)
-                    </div>
-                </div>
+            <!-- Archetype Selection -->
+            <div class="archetype-selection">
+                <h3>Select an Archetype to View Details:</h3>
+                <div id="archetypeButtons" class="archetype-buttons"></div>
             </div>
             
-            <div class="section">
-                <h2>🏔️ Lands</h2>
-                <div id="landsSection" class="card-grid"></div>
+            <!-- Archetype Details -->
+            <div id="archetypeDetails" class="archetype-details" style="display: none;">
+                <div class="archetype-header">
+                    <h3 id="selectedArchetypeTitle"></h3>
+                </div>
+                <div class="copy-deck-section">
+                    <button id="copyDeckButton" class="copy-deck-button" onclick="copyArchetypeDeck()">
+                        📋 Copy Top 23 Cards to Clipboard
+                    </button>
+                    <div id="copySuccessMessage" class="copy-success-message" style="display: none;">
+                        ✅ Copied to clipboard!
+                    </div>
+                </div>
+                <div class="archetype-breakdown">
+                    <div class="card-tier">
+                        <h3>Premium Cards (C+ and Above)</h3>
+                        <div id="selectedArchetypePremium" class="card-grid"></div>
+                    </div>
+                    <div class="card-tier">
+                        <h3>Playable Cards (C- to C)</h3>
+                        <div id="selectedArchetypePlayable" class="card-grid"></div>
+                    </div>
+                    <div class="card-tier">
+                        <h3>Filler Cards (D+ and Below)</h3>
+                        <div id="selectedArchetypeFiller" class="card-grid"></div>
+                    </div>
+                    <div class="splash-section">
+                        <h3>Splash Considerations (B- or Above)</h3>
+                        <p style="font-size: 11px; margin: 5px 0; color: #888; text-align: center;">
+                            +X = extra colors needed | ⚠️ = dangerous (2+ extra colors)
+                        </p>
+                        <div id="selectedArchetypeSplash" class="card-grid"></div>
+                    </div>
+                </div>
             </div>
         </div>
+        
+        <!-- Lands and Miscellaneous View -->
+        <div id="landsAndMiscView" class="analysis-view" style="display: none;">
+            <div class="view-header">
+                <h2>🏔️ Lands and Miscellaneous</h2>
+                <button class="main-menu-btn" onclick="showMainMenu()">🏠 Main Menu</button>
+            </div>
+            <div class="cards-container">
+                <div class="cards-section">
+                    <h2>🏔️ Lands</h2>
+                    <div id="landsSection" class="card-grid"></div>
+                </div>
+                
+                <div class="cards-section">
+                    <h2>❓ Unidentified Cards</h2>
+                    <div id="unidentifiedSection" class="card-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error Messages -->
+        <div id="errorMessages"></div>
     </div>
 
     <!-- JavaScript includes -->

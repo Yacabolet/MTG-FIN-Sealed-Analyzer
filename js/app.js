@@ -3,9 +3,158 @@
 // Global state
 let rankingsData = [];
 let isDataLoaded = false;
+let currentDeckCards = [];
+let currentNotFoundCards = [];
+let currentArchetypeAnalysis = {};
+let currentSelectedArchetype = null;
+let isMobile = false;
 
 // Initialize the application when page loads
-window.addEventListener('load', loadEmbeddedData);
+window.addEventListener('load', function() {
+    loadEmbeddedData();
+    detectMobileAndApplyStyles();
+});
+
+/**
+ * Detect if user is on mobile and apply mobile-friendly styles
+ */
+function detectMobileAndApplyStyles() {
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSmallScreen = window.innerWidth <= 768;
+    
+    isMobile = isMobileDevice || isSmallScreen;
+    
+    if (isMobile) {
+        document.body.classList.add('mobile-detected');
+        console.log('Mobile device detected - applying mobile optimizations');
+    }
+    
+    // Listen for window resize to adjust mobile detection
+    window.addEventListener('resize', function() {
+        const wasSmallScreen = window.innerWidth <= 768;
+        if (wasSmallScreen !== isSmallScreen) {
+            if (wasSmallScreen) {
+                document.body.classList.add('mobile-detected');
+            } else if (!isMobileDevice) {
+                document.body.classList.remove('mobile-detected');
+            }
+        }
+    });
+}
+
+/**
+ * Paste content from clipboard into the textarea
+ */
+async function pasteFromClipboard() {
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            const text = await navigator.clipboard.readText();
+            const textarea = document.getElementById('deckList');
+            textarea.value = text;
+            textarea.focus();
+        } else {
+            // Fallback for browsers that don't support clipboard API
+            alert('Clipboard access not supported. Please paste manually using Ctrl+V (or Cmd+V on Mac)');
+        }
+    } catch (error) {
+        console.error('Failed to read clipboard:', error);
+        alert('Failed to access clipboard. Please paste manually using Ctrl+V (or Cmd+V on Mac)');
+    }
+}
+
+/**
+ * Copy the top 23 cards of the selected archetype to clipboard
+ */
+async function copyArchetypeDeck() {
+    if (!currentSelectedArchetype || !currentArchetypeAnalysis[currentSelectedArchetype]) {
+        alert('No archetype selected');
+        return;
+    }
+    
+    const analysis = currentArchetypeAnalysis[currentSelectedArchetype];
+    const allCards = [...analysis.fittingCards];
+    
+    // Get top 23 cards sorted by adjusted grade
+    const top23Cards = allCards.slice(0, 23);
+    
+    // Count duplicates and create formatted list
+    const cardCounts = {};
+    top23Cards.forEach(card => {
+        if (cardCounts[card.name]) {
+            cardCounts[card.name]++;
+        } else {
+            cardCounts[card.name] = 1;
+        }
+    });
+    
+    // Format as "number cardname"
+    const formattedList = Object.entries(cardCounts)
+        .map(([cardName, count]) => `${count} ${cardName}`)
+        .join('\n');
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(formattedList);
+            showCopySuccessMessage();
+        } else {
+            // Fallback for browsers that don't support clipboard API
+            copyToClipboardFallback(formattedList);
+        }
+    } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+        copyToClipboardFallback(formattedList);
+    }
+}
+
+/**
+ * Fallback method for copying text to clipboard
+ */
+function copyToClipboardFallback(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopySuccessMessage();
+    } catch (error) {
+        console.error('Fallback copy failed:', error);
+        alert('Failed to copy to clipboard. Please copy manually.');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+/**
+ * Show success message when copying to clipboard
+ */
+function showCopySuccessMessage() {
+    const messageElement = document.getElementById('copySuccessMessage');
+    messageElement.style.display = 'block';
+    messageElement.classList.add('show');
+    
+    setTimeout(() => {
+        messageElement.classList.remove('show');
+        setTimeout(() => {
+            messageElement.style.display = 'none';
+        }, 300);
+    }, 2000);
+}
+function loadEmbeddedData() {
+    try {
+        rankingsData = EMBEDDED_RANKINGS_DATA;
+        isDataLoaded = true;
+        console.log(`Loaded ${rankingsData.length} cards from embedded rankings data`);
+    } catch (error) {
+        console.error('Error loading embedded rankings data:', error);
+        isDataLoaded = false;
+    }
+}
 
 /**
  * Load the embedded rankings data
@@ -34,7 +183,7 @@ function analyzeDeck() {
     const lines = deckListText.split('\n').filter(line => line.trim());
     
     if (lines.length === 0) {
-        alert('Please enter a deck list!');
+        alert('Please enter a sealed card pool list!');
         return;
     }
 
@@ -59,18 +208,92 @@ function analyzeDeck() {
         }
     });
 
-    displayResults(deckCards, notFoundCards);
+    // Store results globally
+    currentDeckCards = deckCards;
+    currentNotFoundCards = notFoundCards;
+    
+    // Perform all analysis
+    performFullAnalysis();
+    
+    // Hide input section and show main menu
+    document.getElementById('inputSection').style.display = 'none';
+    showMainMenu();
 }
 
 /**
- * Display the analysis results
+ * Perform full analysis of the deck and store results
  */
-function displayResults(deckCards, notFoundCards) {
+function performFullAnalysis() {
+    // Analyze archetypes
+    analyzeAllArchetypes(currentDeckCards);
+}
+
+/**
+ * Navigation Functions
+ */
+function showMainMenu() {
+    hideAllViews();
+    document.getElementById('mainMenu').style.display = 'block';
+}
+
+function showCardRankings() {
+    hideAllViews();
+    displayCardRankings();
+    // Clear any previous error messages
+    document.getElementById('errorMessages').innerHTML = '';
+    document.getElementById('cardRankingsView').style.display = 'block';
+}
+
+function showArchetypeAnalysis() {
+    hideAllViews();
+    displayArchetypeSelection();
+    // Clear selected archetype when returning to selection
+    currentSelectedArchetype = null;
+    // Clear any previous error messages
+    document.getElementById('errorMessages').innerHTML = '';
+    document.getElementById('archetypeAnalysisView').style.display = 'block';
+}
+
+function showLandsAndMisc() {
+    hideAllViews();
+    displayLandsAndMisc();
+    document.getElementById('landsAndMiscView').style.display = 'block';
+}
+
+function restartAnalysis() {
+    // Clear all data
+    currentDeckCards = [];
+    currentNotFoundCards = [];
+    currentArchetypeAnalysis = {};
+    currentSelectedArchetype = null;
+    
+    // Clear input
+    document.getElementById('deckList').value = '';
+    
+    // Clear error messages
+    document.getElementById('errorMessages').innerHTML = '';
+    
+    // Hide all views and show input section
+    hideAllViews();
+    document.getElementById('inputSection').style.display = 'block';
+}
+
+function hideAllViews() {
+    const views = ['mainMenu', 'cardRankingsView', 'archetypeAnalysisView', 'landsAndMiscView'];
+    views.forEach(viewId => {
+        document.getElementById(viewId).style.display = 'none';
+    });
+}
+
+/**
+ * Display card rankings
+ */
+function displayCardRankings() {
     const mainCards = [];
     const fillerCards = [];
 
     // Separate cards by grade
-    deckCards.forEach(card => {
+    currentDeckCards.forEach(card => {
         const gradeIndex = gradeOrder.indexOf(card.grade);
         if (gradeIndex >= 5) { // C and above (C- is index 4, C is index 5)
             mainCards.push(card);
@@ -106,74 +329,14 @@ function displayResults(deckCards, notFoundCards) {
         li.innerHTML = `<strong>${cardName}</strong> [${card.grade}]`;
         fillerList.appendChild(li);
     });
-
-    // Analyze color combinations
-    analyzeColorCombinations(deckCards);
-    
-    // Analyze archetype highlights
-    analyzeArchetypeHighlights(deckCards);
-
-    // Show not found cards if any
-    if (notFoundCards.length > 0) {
-        const error = document.createElement('div');
-        error.className = 'error';
-        error.innerHTML = `<strong>Cards not found in rankings:</strong> ${notFoundCards.join(', ')}`;
-        document.getElementById('results').appendChild(error);
-    }
-
-    document.getElementById('results').style.display = 'block';
 }
 
 /**
- * Analyze color combinations and suggest best pairs
+ * Analyze all archetypes and store results
  */
-function analyzeColorCombinations(deckCards) {
+function analyzeAllArchetypes(deckCards) {
     const colorPairs = ['WU', 'WB', 'WR', 'WG', 'UB', 'UR', 'UG', 'BR', 'BG', 'RG'];
-    const pairScores = {};
-
-    colorPairs.forEach(pair => {
-        let score = 0;
-        deckCards.forEach(card => {
-            // Calculate adjusted grade for this specific archetype
-            const adjustedGrade = getAdjustedGrade(card, pair);
-            const gradeIndex = gradeOrder.indexOf(adjustedGrade);
-            const gradeWeight = gradeIndex + 1; // F=1, D-=2, ... A+=13
-            
-            if (canFitInColorPair(card.cmc, pair)) {
-                score += gradeWeight;
-            }
-        });
-        pairScores[pair] = score;
-    });
-
-    // Sort pairs by score
-    const sortedPairs = Object.entries(pairScores)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 2); // Top 2 pairs
-
-    const suggestionsDiv = document.getElementById('colorSuggestions');
-    suggestionsDiv.innerHTML = `
-        <p><strong>Recommended color combinations based on your deck's archetype-adjusted grades:</strong></p>
-        ${sortedPairs.map(([pair, score]) => 
-            `<span class="color-suggestion">${pair} (Score: ${score})</span>`
-        ).join('')}
-    `;
-}
-
-/**
- * Analyze archetype highlights and display breakdowns
- */
-function analyzeArchetypeHighlights(deckCards) {
-    const colorPairs = ['WU', 'WB', 'WR', 'WG', 'UB', 'UR', 'UG', 'BR', 'BG', 'RG'];
-    const archetypeAnalysis = {};
-    const lands = [];
-
-    // Separate lands first
-    deckCards.forEach(card => {
-        if (isLand(card)) {
-            lands.push(card);
-        }
-    });
+    currentArchetypeAnalysis = {};
 
     // Analyze each color pair
     colorPairs.forEach(pair => {
@@ -219,7 +382,7 @@ function analyzeArchetypeHighlights(deckCards) {
         const creaturePenalty = Math.max(0, (13 - creatureCount) * 10);
         archetypeScore = Math.max(0, archetypeScore - creaturePenalty);
 
-        archetypeAnalysis[pair] = {
+        currentArchetypeAnalysis[pair] = {
             score: archetypeScore,
             fittingCards: fittingCards,
             splashCards: splashCards,
@@ -227,37 +390,80 @@ function analyzeArchetypeHighlights(deckCards) {
             creaturePenalty: creaturePenalty
         };
     });
+}
 
-    // Find top 2 archetypes
-    const sortedArchetypes = Object.entries(archetypeAnalysis)
-        .sort(([,a], [,b]) => b.score - a.score)
-        .slice(0, 2);
+/**
+ * Display archetype selection buttons
+ */
+function displayArchetypeSelection() {
+    const buttonsContainer = document.getElementById('archetypeButtons');
+    buttonsContainer.innerHTML = '';
 
-    // Display first archetype
-    if (sortedArchetypes[0]) {
-        const [archetype1, analysis1] = sortedArchetypes[0];
-        displayArchetypeBreakdown(1, archetype1, analysis1, deckCards);
-    } else {
-        clearArchetypeDisplay(1);
-    }
+    // Sort archetypes by score
+    const sortedArchetypes = Object.entries(currentArchetypeAnalysis)
+        .sort(([,a], [,b]) => b.score - a.score);
 
-    // Display second archetype
-    if (sortedArchetypes[1]) {
-        const [archetype2, analysis2] = sortedArchetypes[1];
-        displayArchetypeBreakdown(2, archetype2, analysis2, deckCards);
-    } else {
-        clearArchetypeDisplay(2);
-    }
+    sortedArchetypes.forEach(([archetype, analysis], index) => {
+        const { fittingCards } = analysis;
+        
+        // Calculate creature breakdown for top 23 vs remaining cards
+        const top23Cards = fittingCards.slice(0, 23);
+        const remainingCards = fittingCards.slice(23);
+        
+        const creaturesInTop23 = top23Cards.filter(card => isCreatureOrGeneratesCreatures(card)).length;
+        const creaturesInRemaining = remainingCards.filter(card => isCreatureOrGeneratesCreatures(card)).length;
+        
+        const button = document.createElement('button');
+        button.className = 'archetype-button';
+        
+        let threatDisplay = `Threats: ${creaturesInTop23}`;
+        if (creaturesInRemaining > 0) {
+            threatDisplay += ` (${creaturesInRemaining})`;
+        }
+        
+        button.innerHTML = `
+            <strong>${archetype}</strong><br>
+            <small>Score: ${analysis.score} | ${threatDisplay}</small>
+        `;
+        button.onclick = () => selectArchetype(archetype, button);
+        buttonsContainer.appendChild(button);
+    });
 
-    // Display lands
-    displayLands(lands, deckCards);
+    // Hide archetype details initially
+    document.getElementById('archetypeDetails').style.display = 'none';
+}
+
+/**
+ * Select and display a specific archetype
+ */
+function selectArchetype(archetype, buttonElement) {
+    // Store the currently selected archetype
+    currentSelectedArchetype = archetype;
+    
+    // Update button selection
+    document.querySelectorAll('.archetype-button').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    buttonElement.classList.add('selected');
+
+    // Display archetype details
+    const analysis = currentArchetypeAnalysis[archetype];
+    displayArchetypeDetails(archetype, analysis);
+    document.getElementById('archetypeDetails').style.display = 'block';
 }
 
 /**
  * Display detailed breakdown for a specific archetype
  */
-function displayArchetypeBreakdown(num, archetype, analysis, deckCards) {
+function displayArchetypeDetails(archetype, analysis) {
     const { fittingCards, splashCards, creatureCount, creaturePenalty } = analysis;
+    
+    // Calculate creature breakdown for top 23 vs remaining cards
+    const top23Cards = fittingCards.slice(0, 23);
+    const remainingCards = fittingCards.slice(23);
+    
+    const creaturesInTop23 = top23Cards.filter(card => isCreatureOrGeneratesCreatures(card)).length;
+    const creaturesInRemaining = remainingCards.filter(card => isCreatureOrGeneratesCreatures(card)).length;
     
     // Separate cards by tier using ADJUSTED grades
     const premium = fittingCards.filter(card => gradeOrder.indexOf(card.adjustedGrade) >= 6); // C+ and above
@@ -268,58 +474,89 @@ function displayArchetypeBreakdown(num, archetype, analysis, deckCards) {
     const filler = fittingCards.filter(card => gradeOrder.indexOf(card.adjustedGrade) < 4); // D+ and below
 
     // Build title with creature count info
-    let titleText = `⭐ ${num === 1 ? 'Best' : 'Second Best'} Archetype: ${archetype} (${fittingCards.length} cards)`;
-    titleText += `<br><small style="font-size: 12px; color: ${creatureCount >= 13 ? '#4ade80' : '#f87171'};">`;
-    titleText += `Creatures/Threats: ${creatureCount}/13`;
+    let titleText = `${archetype} Archetype Details (${fittingCards.length} cards)`;
+    titleText += `<br><small style="font-size: 12px; color: ${creaturesInTop23 >= 13 ? '#4ade80' : '#f87171'};">`;
+    titleText += `Threats: ${creaturesInTop23}`;
+    if (creaturesInRemaining > 0) {
+        titleText += ` (${creaturesInRemaining})`;
+    }
     if (creaturePenalty > 0) {
-        titleText += ` (Penalty: -${creaturePenalty} points)`;
+        titleText += ` | Penalty: -${creaturePenalty} points`;
     }
     titleText += `</small>`;
     
-    document.getElementById(`archetype${num}Title`).innerHTML = titleText;
+    document.getElementById('selectedArchetypeTitle').innerHTML = titleText;
 
     // Display premium cards
-    document.getElementById(`archetype${num}Premium`).innerHTML = 
-        premium.length > 0 ? premium.map(card => createCardElement(card, 'normal', deckCards)).join('') : 
+    document.getElementById('selectedArchetypePremium').innerHTML = 
+        premium.length > 0 ? premium.map(card => createCardElement(card, 'normal', currentDeckCards)).join('') : 
         '<p style="text-align: center; color: #888; font-style: italic;">No premium cards</p>';
 
     // Display playable cards
-    document.getElementById(`archetype${num}Playable`).innerHTML = 
-        playable.length > 0 ? playable.map(card => createCardElement(card, 'normal', deckCards)).join('') : 
+    document.getElementById('selectedArchetypePlayable').innerHTML = 
+        playable.length > 0 ? playable.map(card => createCardElement(card, 'normal', currentDeckCards)).join('') : 
         '<p style="text-align: center; color: #888; font-style: italic;">No playable cards</p>';
 
     // Display filler cards
-    document.getElementById(`archetype${num}Filler`).innerHTML = 
-        filler.length > 0 ? filler.map(card => createCardElement(card, 'normal', deckCards)).join('') : 
+    document.getElementById('selectedArchetypeFiller').innerHTML = 
+        filler.length > 0 ? filler.map(card => createCardElement(card, 'normal', currentDeckCards)).join('') : 
         '<p style="text-align: center; color: #888; font-style: italic;">No filler cards</p>';
 
     // Display splash considerations
-    document.getElementById(`archetype${num}Splash`).innerHTML = 
-        splashCards.length > 0 ? splashCards.map(card => createCardElement(card, 'splash', deckCards)).join('') : 
+    document.getElementById('selectedArchetypeSplash').innerHTML = 
+        splashCards.length > 0 ? splashCards.map(card => createCardElement(card, 'splash', currentDeckCards)).join('') : 
         '<p style="text-align: center; color: #888; font-style: italic;">No splash options</p>';
 }
 
 /**
- * Clear archetype display when no data is available
+ * Display lands and miscellaneous cards
  */
-function clearArchetypeDisplay(num) {
-    document.getElementById(`archetype${num}Title`).innerHTML = `⭐ Best Archetype #${num}`;
-    ['Premium', 'Playable', 'Filler', 'Splash'].forEach(tier => {
-        document.getElementById(`archetype${num}${tier}`).innerHTML = 
-            '<p style="text-align: center; color: #888; font-style: italic;">No archetype found</p>';
+function displayLandsAndMisc() {
+    const lands = [];
+    currentDeckCards.forEach(card => {
+        if (isLand(card)) {
+            lands.push(card);
+        }
     });
-}
 
-/**
- * Display lands section
- */
-function displayLands(lands, deckCards) {
+    // Display lands
     const landsSection = document.getElementById('landsSection');
     if (lands.length > 0) {
         lands.sort((a, b) => gradeOrder.indexOf(b.grade) - gradeOrder.indexOf(a.grade));
-        landsSection.innerHTML = lands.map(card => createCardElement(card, 'normal', deckCards)).join('');
+        landsSection.innerHTML = lands.map(card => createCardElement(card, 'normal', currentDeckCards)).join('');
     } else {
         landsSection.innerHTML = '<p style="text-align: center; color: #888; font-style: italic;">No lands found</p>';
+    }
+
+    // Display unidentified cards
+    const unidentifiedSection = document.getElementById('unidentifiedSection');
+    if (currentNotFoundCards.length > 0) {
+        unidentifiedSection.innerHTML = currentNotFoundCards.map(cardName => 
+            `<div class="card-item" style="border-left-color: #888888;"><strong>${cardName}</strong></div>`
+        ).join('');
+    } else {
+        unidentifiedSection.innerHTML = '<p style="text-align: center; color: #888; font-style: italic;">No unidentified cards</p>';
+    }
+    
+    // Clear any previous error messages since unidentified cards are now handled in the proper section
+    document.getElementById('errorMessages').innerHTML = '';
+}
+
+/**
+ * Toggle collapsible sections
+ */
+function toggleCollapsible(sectionId) {
+    const content = document.getElementById(sectionId + 'Content');
+    const icon = document.getElementById(sectionId + 'Icon');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.textContent = '▼';
+        icon.classList.remove('collapsed');
+    } else {
+        content.classList.add('hidden');
+        icon.textContent = '▶';
+        icon.classList.add('collapsed');
     }
 }
 

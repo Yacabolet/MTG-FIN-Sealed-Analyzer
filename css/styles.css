@@ -114,13 +114,255 @@ button:active {
     transform: translateY(0);
 }
 
-/* Results section */
-.results {
-    display: none;
-    margin-top: 25px;
+/* Button group for input section */
+.button-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-/* Card container layouts */
+.paste-button {
+    background-color: #6b7280;
+    border-color: #4b5563;
+    padding: 12px 16px;
+    font-size: 16px;
+    min-width: 50px;
+}
+
+.paste-button:hover {
+    background-color: #4b5563;
+}
+
+/* Copy deck functionality */
+.copy-deck-section {
+    margin-bottom: 20px;
+    text-align: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333333;
+}
+
+.copy-deck-button {
+    background-color: #059669;
+    border-color: #047857;
+    padding: 12px 20px;
+    font-size: 14px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.copy-deck-button:hover {
+    background-color: #047857;
+}
+
+.copy-success-message {
+    margin-top: 10px;
+    color: #10b981;
+    font-weight: 600;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.copy-success-message.show {
+    opacity: 1;
+}
+
+/* Main Menu Styles */
+.main-menu {
+    background-color: #262626;
+    border-radius: 8px;
+    padding: 30px;
+    border: 1px solid #333333;
+}
+
+.menu-section h2 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.6em;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.menu-button {
+    background-color: #4a9eff;
+    color: #ffffff;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    border: 1px solid #3d8bef;
+    width: 100%;
+}
+
+.menu-button:hover {
+    background-color: #3d8bef;
+    transform: translateY(-1px);
+}
+
+.restart-button {
+    background-color: #dc2626;
+    border-color: #b91c1c;
+}
+
+.restart-button:hover {
+    background-color: #b91c1c;
+}
+
+/* Analysis View Styles */
+.analysis-view {
+    margin-top: 20px;
+}
+
+.view-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #333333;
+    text-align: center;
+}
+
+.main-menu-btn {
+    background-color: #6b7280;
+    border-color: #4b5563;
+    padding: 10px 16px;
+    font-size: 12px;
+}
+
+.main-menu-btn:hover {
+    background-color: #4b5563;
+}
+
+.view-header h2 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1.8em;
+}
+
+/* Collapsible Sections */
+.collapsible-section {
+    background-color: #262626;
+    border-radius: 8px;
+    border: 1px solid #333333;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.collapsible-header {
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2a2a;
+    transition: background-color 0.2s ease;
+}
+
+.collapsible-header:hover {
+    background-color: #333333;
+}
+
+.collapsible-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.2em;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.toggle-icon {
+    font-size: 12px;
+    color: #888888;
+    transition: transform 0.2s ease;
+}
+
+.toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.collapsible-content {
+    padding: 20px;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+.collapsible-content.hidden {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Archetype Styles */
+.archetype-selection {
+    margin-bottom: 30px;
+}
+
+.archetype-selection h3 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
+
+.archetype-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.archetype-button {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    padding: 12px 16px;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.archetype-button:hover {
+    background-color: #4a4a4a;
+    border-color: #5a5a5a;
+}
+
+.archetype-button.selected {
+    background-color: #4a9eff;
+    border-color: #3d8bef;
+    color: #ffffff;
+}
+
+.archetype-details {
+    background-color: #262626;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #333333;
+}
+
+.archetype-header h3 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+}
+
+/* Card display styles */
 .cards-container {
     display: flex;
     gap: 20px;
@@ -135,21 +377,6 @@ button:active {
     border: 1px solid #333333;
 }
 
-.archetype-container {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.archetype-section {
-    flex: 1;
-    padding: 20px;
-    border-radius: 8px;
-    background-color: #262626;
-    border: 1px solid #333333;
-}
-
-/* Section styles */
 .section {
     margin-bottom: 20px;
     padding: 20px;
@@ -176,7 +403,6 @@ button:active {
     font-weight: 600;
 }
 
-/* Card display styles */
 .card-list {
     list-style: none;
     padding: 0;
@@ -237,7 +463,7 @@ button:active {
 
 /* Archetype breakdown styles */
 .archetype-breakdown {
-    margin-top: 15px;
+    margin-top: 0;
 }
 
 .card-tier, .splash-section {
@@ -347,27 +573,111 @@ button:active {
     font-style: italic;
 }
 
-/* Responsive design */
+/* Mobile-specific improvements */
+.mobile-detected {
+    /* Enhanced touch targets for mobile */
+}
+
+.mobile-detected button {
+    min-height: 44px; /* iOS recommended touch target */
+    padding: 14px 24px;
+    font-size: 16px; /* Prevents zoom on iOS */
+}
+
+.mobile-detected .menu-button {
+    min-height: 50px;
+    padding: 18px 24px;
+    font-size: 18px;
+}
+
+.mobile-detected .archetype-button {
+    min-height: 44px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.mobile-detected .card-item {
+    padding: 12px 14px;
+    font-size: 14px;
+}
+
+.mobile-detected textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 16px;
+}
+
+.mobile-detected .collapsible-header {
+    padding: 18px 20px;
+}
+
+.mobile-detected .view-header h2 {
+    font-size: 1.6em;
+}
+
+.mobile-detected .container {
+    padding: 20px 15px;
+}
+
+/* Enhanced mobile responsive design */
 @media (max-width: 768px) {
     body {
-        padding: 15px;
+        padding: 10px;
     }
     
     .container {
-        padding: 20px;
+        padding: 15px;
+        border-radius: 8px;
     }
     
-    .cards-container, .archetype-container {
+    .cards-container {
         flex-direction: column;
+        gap: 15px;
     }
     
     .card-list, .card-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .archetype-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .view-header {
+        gap: 10px;
+    }
+    
+    .button-group {
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    .menu-buttons {
+        gap: 12px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+        margin-bottom: 15px;
+    }
+    
+    .archetype-breakdown {
+        margin-top: 0;
+    }
+    
+    .card-tier, .splash-section {
+        margin-bottom: 12px;
+        padding: 10px;
     }
 }
 
 @media (max-width: 480px) {
     .card-list, .card-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .archetype-buttons {
         grid-template-columns: 1fr;
     }
     

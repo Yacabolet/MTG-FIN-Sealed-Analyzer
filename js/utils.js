@@ -51,8 +51,8 @@ function canFitInColorPair(cmc, colorPair) {
     const cmcStr = cmc.toString();
     const colors = colorPair.split('');
     
-    // Extract colors from CMC (ignore numbers)
-    const cardColors = cmcStr.replace(/\d+/g, '').split('');
+    // Extract colors from CMC (ignore numbers and X)
+    const cardColors = cmcStr.replace(/[\d+X]/g, '').split('').filter(c => c !== '');
     
     // Check if all card colors are in the pair (or card is colorless)
     return cardColors.length === 0 || cardColors.every(color => colors.includes(color));
@@ -129,7 +129,8 @@ function isSplashCandidate(card, archetype) {
     const cmcStr = card.cmc ? card.cmc.toString() : '';
     if (!cmcStr || cmcStr === '') return false;
 
-    const cardColors = cmcStr.replace(/\d+/g, '').split('');
+    // Extract colors (ignore numbers and X)
+    const cardColors = cmcStr.replace(/[\d+X]/g, '').split('').filter(c => c !== '');
     const archetypeColors = archetype.split('');
 
     // Must contain at least one color from archetype
@@ -245,4 +246,82 @@ function countThemeCards(deckCards, theme) {
         default:
             return 0;
     }
+}
+
+/**
+ * Count removal spells in a card list
+ */
+function countRemovalSpells(cardList) {
+    return cardList.filter(card => REMOVAL_SPELLS.includes(card.name)).length;
+}
+
+/**
+ * Count equipment cards in a card list
+ */
+function countEquipment(cardList) {
+    return cardList.filter(card => 
+        card.type && card.type.toLowerCase().includes('equipment')
+    ).length;
+}
+
+/**
+ * Count big spells for UR archetype
+ */
+function countBigSpells(cardList) {
+    return cardList.filter(card => {
+        // Check if it's in the predefined list
+        if (BIG_SPELLS.includes(card.name)) return true;
+        
+        // Check if it's a non-creature spell with CMC 4+
+        if (card.type && card.type.toLowerCase().includes('creature')) return false;
+        
+        const cmcStr = card.cmc ? card.cmc.toString() : '';
+        if (!cmcStr || cmcStr === '') return false;
+        
+        // If it has X, it can be cast for 4+
+        if (cmcStr.includes('X')) return true;
+        
+        // Calculate total CMC (letters count as 1 each, numbers add up)
+        const numbers = cmcStr.match(/\d+/g);
+        const letters = cmcStr.replace(/[\d+X]/g, '').split('').filter(c => c !== '');
+        
+        const numberSum = numbers ? numbers.reduce((sum, num) => sum + parseInt(num), 0) : 0;
+        const letterCount = letters.length;
+        const totalCMC = numberSum + letterCount;
+        
+        return totalCMC >= 4;
+    }).length;
+}
+
+/**
+ * Count go wide creatures for GW archetype
+ */
+function countGoWideCreatures(cardList) {
+    return cardList.filter(card => GO_WIDE_CREATURES.includes(card.name)).length;
+}
+
+/**
+ * Count artifacts for WU archetype (including Retrieve the Esper)
+ */
+function countArtifacts(cardList) {
+    return cardList.filter(card => 
+        (card.type && card.type.toLowerCase().includes('artifact')) ||
+        card.name === 'Retrieve the Esper'
+    ).length;
+}
+
+/**
+ * Count town lands for GU archetype, separating fitting vs non-fitting
+ */
+function countTownLands(cardList, archetype = null) {
+    const townLands = cardList.filter(card => TOWN_LANDS.includes(card.name));
+    
+    if (!archetype) {
+        return townLands.length;
+    }
+    
+    const fitting = townLands.filter(card => canFitInColorPair(card.cmc, archetype)).length;
+    const nonFitting = townLands.length - fitting;
+    
+    return { fitting, nonFitting, total: townLands.length };
 }

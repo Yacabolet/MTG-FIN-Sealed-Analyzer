@@ -145,16 +145,6 @@ function showCopySuccessMessage() {
         }, 300);
     }, 2000);
 }
-function loadEmbeddedData() {
-    try {
-        rankingsData = EMBEDDED_RANKINGS_DATA;
-        isDataLoaded = true;
-        console.log(`Loaded ${rankingsData.length} cards from embedded rankings data`);
-    } catch (error) {
-        console.error('Error loading embedded rankings data:', error);
-        isDataLoaded = false;
-    }
-}
 
 /**
  * Load the embedded rankings data
@@ -382,12 +372,52 @@ function analyzeAllArchetypes(deckCards) {
         const creaturePenalty = Math.max(0, (13 - creatureCount) * 10);
         archetypeScore = Math.max(0, archetypeScore - creaturePenalty);
 
+        // Calculate archetype-specific stats
+        const remainingCards = fittingCards.slice(23);
+        const archetypeStats = {
+            removal: {
+                top23: countRemovalSpells(top23),
+                remaining: countRemovalSpells(remainingCards)
+            }
+        };
+
+        // Add archetype-specific trackers
+        if (pair === 'WR') {
+            archetypeStats.equipment = {
+                top23: countEquipment(top23),
+                remaining: countEquipment(remainingCards)
+            };
+        } else if (pair === 'UR') {
+            archetypeStats.bigSpells = {
+                top23: countBigSpells(top23),
+                remaining: countBigSpells(remainingCards)
+            };
+        } else if (pair === 'WG') {
+            archetypeStats.goWide = {
+                top23: countGoWideCreatures(top23),
+                remaining: countGoWideCreatures(remainingCards)
+            };
+        } else if (pair === 'WU') {
+            archetypeStats.artifacts = {
+                top23: countArtifacts(top23),
+                remaining: countArtifacts(remainingCards)
+            };
+        } else if (pair === 'UG') {
+            const townStats = countTownLands(deckCards, pair);
+            archetypeStats.townLands = {
+                fitting: townStats.fitting,
+                nonFitting: townStats.nonFitting,
+                total: townStats.total
+            };
+        }
+
         currentArchetypeAnalysis[pair] = {
             score: archetypeScore,
             fittingCards: fittingCards,
             splashCards: splashCards,
             creatureCount: creatureCount,
-            creaturePenalty: creaturePenalty
+            creaturePenalty: creaturePenalty,
+            stats: archetypeStats
         };
     });
 }
@@ -456,7 +486,7 @@ function selectArchetype(archetype, buttonElement) {
  * Display detailed breakdown for a specific archetype
  */
 function displayArchetypeDetails(archetype, analysis) {
-    const { fittingCards, splashCards, creatureCount, creaturePenalty } = analysis;
+    const { fittingCards, splashCards, creatureCount, creaturePenalty, stats } = analysis;
     
     // Calculate creature breakdown for top 23 vs remaining cards
     const top23Cards = fittingCards.slice(0, 23);
@@ -473,13 +503,50 @@ function displayArchetypeDetails(archetype, analysis) {
     });
     const filler = fittingCards.filter(card => gradeOrder.indexOf(card.adjustedGrade) < 4); // D+ and below
 
-    // Build title with creature count info
+    // Build title with stats
     let titleText = `${archetype} Archetype Details (${fittingCards.length} cards)`;
     titleText += `<br><small style="font-size: 12px; color: ${creaturesInTop23 >= 13 ? '#4ade80' : '#f87171'};">`;
     titleText += `Threats: ${creaturesInTop23}`;
     if (creaturesInRemaining > 0) {
         titleText += ` (${creaturesInRemaining})`;
     }
+    
+    // Add removal stats
+    if (stats.removal) {
+        titleText += ` | Removal: ${stats.removal.top23}`;
+        if (stats.removal.remaining > 0) {
+            titleText += ` (${stats.removal.remaining})`;
+        }
+    }
+    
+    // Add archetype-specific stats
+    if (stats.equipment) {
+        titleText += ` | Equipment: ${stats.equipment.top23}`;
+        if (stats.equipment.remaining > 0) {
+            titleText += ` (${stats.equipment.remaining})`;
+        }
+    } else if (stats.bigSpells) {
+        titleText += ` | Big Spells: ${stats.bigSpells.top23}`;
+        if (stats.bigSpells.remaining > 0) {
+            titleText += ` (${stats.bigSpells.remaining})`;
+        }
+    } else if (stats.goWide) {
+        titleText += ` | Go Wide: ${stats.goWide.top23}`;
+        if (stats.goWide.remaining > 0) {
+            titleText += ` (${stats.goWide.remaining})`;
+        }
+    } else if (stats.artifacts) {
+        titleText += ` | Artifacts: ${stats.artifacts.top23}`;
+        if (stats.artifacts.remaining > 0) {
+            titleText += ` (${stats.artifacts.remaining})`;
+        }
+    } else if (stats.townLands) {
+        titleText += ` | Town Lands: ${stats.townLands.fitting}`;
+        if (stats.townLands.nonFitting > 0) {
+            titleText += ` (${stats.townLands.nonFitting})`;
+        }
+    }
+    
     if (creaturePenalty > 0) {
         titleText += ` | Penalty: -${creaturePenalty} points`;
     }

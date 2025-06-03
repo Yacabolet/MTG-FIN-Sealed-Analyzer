@@ -36,6 +36,56 @@ const CREATURE_GENERATORS = [
     "Sidequest: Raise a Chocobo"
 ];
 
+// Removal spells that can deal with opposing threats
+const REMOVAL_SPELLS = [
+    "Overkill", "Sephiroth's Intervention", "Eject", "Gaius van Baelsar", 
+    "Self-Destruct", "Suplex", "Light of Judgment", "Vayne's Treachery",
+    "Thunder Magic", "Fire Magic", "Ice Magic", "Sleep Magic", "Evil Reawakened",
+    "Fate of the Sun-Cryst", "Slash of Light", "Ultima", "Nibelheim Aflame",
+    "The Final Days", "Choco-Comet", "Summon: Primal Odin", "Vincent's Limit Break",
+    "Swallowed by Leviathan", "Stuck in Summoner's Sanctum", "Memories Returning",
+    "Summon: Leviathan", "Poison the Waters", "Circle of Power", "Random Encounter",
+    "Cornered by Black Mages", "Blazing Bomb", "Louisoix's Sacrifice", "Magic Damper",
+    "Syncopate", "Restoration Magic", "You're Not Alone", "Airship Crash"
+];
+
+// Big spells for UR archetype (4+ CMC non-creature spells, including X spells and specific variable spells)
+const BIG_SPELLS = [
+    "Summon: Knights of Round", "Summon: Leviathan", "Summon: Shiva", "Summon: Brynhildr",
+    "Summon: Fenrir", "Summon: Bahamut", "Summon: Primal Odin", "Summon: Titan",
+    "Summon: Esper Ramuh", "Summon: Fat Chocobo", "Summon: Anima", "Summon: G.F. Cerberus",
+    "Summon: G.F. Ifrit", "Summon: Primal Garuda", "Summon: Choco/Mog", "Ultima",
+    "Moogles' Valor", "The Crystal's Chosen", "Travel the Overworld", "Rydia's Return",
+    "Memories Returning", "Valkyrie Aerial Unit", "Ice Flan", "Triple Triad",
+    "Ancient Adamantoise", "Relm's Sketching", "Malboro", "Call the Mountain Chocobo",
+    "Chocobo Racetrack", "A Realm Reborn", "Random Encounter", "Aerith Rescue Mission",
+    "Machinist's Arsenal", "Fate of the Sun-Cryst", "Nibelheim Aflame", "The Final Days",
+    "Choco-Comet", "Light of Judgment", "Sorceress's Schemes", "Unexpected Request",
+    "Evil Reawakened", "Sidequest: Hunt the Mark", "Reach the Horizon", "Circle of Power",
+    "Sidequest: Card Collection", "Sidequest: Play Blitzball", "Cornered by Black Mages",
+    // X spells and variable cost spells
+    "Choco-Comet", "Syncopate", "Fire Magic", "Laughing Mad", "Dreams of Laguna", 
+    "Ice Magic", "Thunder Magic"
+];
+
+// Go Wide creatures for GW archetype
+const GO_WIDE_CREATURES = [
+    "Chocobo Racetrack", "Gysahl Greens", "Rinoa Heartilly", "Quina, Qu Gourmet",
+    "Sidequest: Raise a Chocobo", "Summon: Fat Chocobo", "Aerith Rescue Mission",
+    "Battle Menu", "Dion, Bahamut's Dominant", "Dwarven Castle Guard", "Magitek Armor",
+    "Moogles' Valor", "Rufus Shinra", "Summon: Knights of Round", "The Crystal's Chosen"
+];
+
+// Town lands for GU archetype
+const TOWN_LANDS = [
+    "Adventurer's Inn", "Balamb Garden, SeeD Academy", "Baron, Airship Kingdom",
+    "Capital City", "Clive's Hideaway", "Crossroads Village", "Eden, Seat of the Sanctum",
+    "Gohn, Town of Ruin", "Gongaga, Reactor Town", "Guadosalam, Farplane Gateway",
+    "Jidoor, Aristocratic Capital", "Sharlayan, Nation of Scholars", "Starting Town",
+    "The Gold Saucer", "Treno, Dark City", "Windurst, Federation Center",
+    "Zanarkand, Ancient Metropolis"
+];
+
 // Special synergies and build-around requirements
 const CARD_SYNERGIES = {
     // Specific card synergies
